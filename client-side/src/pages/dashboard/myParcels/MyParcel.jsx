@@ -3,6 +3,7 @@ import React from "react";
 import useAuth from "../../../hooks/authHook/useAuth";
 import useAxiosSecure from "../../../hooks/axios/useAxiosSecure";
 import Swal from "sweetalert2";
+import { Link } from "react-router";
 
 const MyParcel = () => {
   const { user } = useAuth();
@@ -94,7 +95,7 @@ const MyParcel = () => {
                   <button className="btn btn-xs btn-info">View</button>
 
                   {parcel.payment_status === "unpaid" && (
-                    <button className="btn btn-xs btn-warning">Pay</button>
+                    <Link to={`/dashboard/payment/${parcel._id}`} className="btn btn-xs btn-warning">Pay</Link>
                   )}
 
                   <button

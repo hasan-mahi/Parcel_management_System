@@ -1,5 +1,11 @@
 import React from "react";
 import { NavLink, Outlet } from "react-router";
+import {
+  FaBoxOpen,
+  FaMoneyCheckAlt,
+  FaMapMarkedAlt,
+  FaUserCircle,
+} from "react-icons/fa";
 import ProFastLogo from "./shared/logo/ProFastLogo";
 
 const DashboardLayout = () => {
@@ -31,17 +37,8 @@ const DashboardLayout = () => {
                 </svg>
               </label>
             </div>
-            <div className="mx-2 flex-1 px-2"><ProFastLogo></ProFastLogo></div>
-            <div className="hidden flex-none lg:hidden">
-              <ul className="menu menu-horizontal">
-                {/* Navbar menu content here */}
-                <li>
-                  <a>Navbar Item 1</a>
-                </li>
-                <li>
-                  <a>Navbar Item 2</a>
-                </li>
-              </ul>
+            <div className="mx-2 flex-1 px-2">
+              <ProFastLogo></ProFastLogo>
             </div>
           </div>
           {/* Page content here */}
@@ -56,10 +53,43 @@ const DashboardLayout = () => {
           <ul className="menu bg-base-200 min-h-full w-80 p-4">
             {/* Sidebar content here */}
             <li>
-              <NavLink to='/dashboard/myParcels'>My Parcels</NavLink>
+              <NavLink
+                to="/dashboard/myParcels"
+                className="flex items-center gap-3"
+              >
+                <FaBoxOpen className="text-lg" />
+                My Parcels
+              </NavLink>
             </li>
+
             <li>
-              <a>Sidebar Item 2</a>
+              <NavLink
+                to="/dashboard/paymentHistory"
+                className="flex items-center gap-3"
+              >
+                <FaMoneyCheckAlt className="text-lg" />
+                Payment History
+              </NavLink>
+            </li>
+
+            <li>
+              <NavLink
+                to="/dashboard/track"
+                className="flex items-center gap-3"
+              >
+                <FaMapMarkedAlt className="text-lg" />
+                Track Parcel
+              </NavLink>
+            </li>
+
+            <li>
+              <NavLink
+                to="/dashboard/profile"
+                className="flex items-center gap-3"
+              >
+                <FaUserCircle className="text-lg" />
+                Profile
+              </NavLink>
             </li>
           </ul>
         </div>

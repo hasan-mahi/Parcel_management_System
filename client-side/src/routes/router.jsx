@@ -10,6 +10,8 @@ import Coverage from "../pages/coverage/Coverage";
 import SendParcel from "../pages/sendParcel/SendParcel";
 import DashboardLayout from "../layouts/DashboardLayout";
 import MyParcel from "../pages/dashboard/myParcels/MyParcel";
+import Payment from "../pages/dashboard/payment/Payment";
+import PaymentHistory from "../pages/dashboard/paymentHistory/PaymentHistory";
 
 const router = createBrowserRouter([
   {
@@ -60,6 +62,14 @@ const router = createBrowserRouter([
         path: "myParcels",
         Component: MyParcel,
       },
+      {
+        path:'payment/:id',
+        Component: Payment
+      },
+      {
+        path:'paymentHistory',
+        Component: PaymentHistory
+      }
     ],
   },
 ]);
