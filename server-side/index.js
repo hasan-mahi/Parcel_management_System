@@ -39,6 +39,20 @@ async function startServer() {
     const parcelDB = client.db("parcelDB");
     const parcelCollection = parcelDB.collection("parcels");
     const paymentCollection = parcelDB.collection("payments");
+    const userCollection = parcelDB.collection("users");
+
+    app.post("/users", async (req, res) => {
+      const email = req.body.email;
+      const userExist = await userCollection.findOne({ email });
+
+      if (userExist) {
+        return res.status(200).send({ message: "user exist", inserted: false });
+      }
+
+      const user = req.body;
+      const result = await userCollection.insertOne(user);
+      res.send(result);
+    });
 
     app.get("/parcels", async (req, res) => {
       try {
@@ -103,6 +117,50 @@ async function startServer() {
       } catch (error) {
         res.status(500).json({
           message: "Failed to delete parcel",
+          error,
+        });
+      }
+    });
+
+    app.post("/tracking", async (req, res) => {
+      try {
+        const {
+          parcelId,
+          tracking_id,
+          status,
+          message,
+          updated_by = "",
+        } = req.body;
+
+        if (!ObjectId.isValid(parcelId)) {
+          return res.status(400).json({ message: "Invalid parcel ID" });
+        }
+
+        const trackingData = {
+          parcel_id: new ObjectId(parcelId),
+          tracking_id,
+          status,
+          message,
+          updated_by,
+          time: new Date(),
+        };
+
+        // Insert tracking history
+        const result = await trackingCollection.insertOne(trackingData);
+
+        // Update current parcel status
+        await parcelCollection.updateOne(
+          { _id: new ObjectId(parcelId) },
+          { $set: { status } },
+        );
+
+        res.status(201).json({
+          message: "Tracking updated successfully",
+          trackingId: result.insertedId,
+        });
+      } catch (error) {
+        res.status(500).json({
+          message: "Failed to update tracking",
           error,
         });
       }

@@ -1,12 +1,16 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import AuthContext from "../../../context/authContext/AuthContext";
 import useAuth from "../../../hooks/authHook/useAuth";
+import useAxios from "../../../hooks/axios/useAxios";
 import { Link } from "react-router";
 import SocialLogin from "../socialLogin/SocialLogin";
+import axios from "axios";
 
 const Register = () => {
-  const { registerUser } = useAuth();
+  const { registerUser, updateUserProfile } = useAuth();
+  const axiosInstance = useAxios();
+  const [profilePic, setProfilePic] = useState("");
 
   const {
     register,
@@ -17,8 +21,41 @@ const Register = () => {
   const onSubmit = (data) => {
     console.log(data);
     registerUser(data.email, data.password)
-      .then((result) => console.log(result.user))
+      .then(async(result) => {
+        console.log(result.user);
+
+        //database update
+        const userInfo = {
+          email: data.email,
+          role: "user", //default user
+          created_at: new Date().toISOString(),
+        };
+
+        const userRes = await axiosInstance.post('/users', userInfo);
+        console.log(userRes.data);
+
+        // firebase update
+        const userProfile = {
+          displayName: data.name,
+          photoURL: profilePic,
+        };
+
+        updateUserProfile(userProfile)
+          .then(console.log("success"))
+          .catch((error) => console.log(error));
+      })
       .catch((error) => console.log(error));
+  };
+
+  const handleUploadImage = async (e) => {
+    const image = e.target.files[0];
+    const formData = new FormData();
+    formData.append("image", image);
+    const res = await axios.post(
+      `https://api.imgbb.com/1/upload?expiration=600&key=${import.meta.env.VITE_image_upload_key}`,
+      formData,
+    );
+    setProfilePic(res.data.data.url);
   };
 
   return (
@@ -44,6 +81,30 @@ const Register = () => {
                 {errors.email?.type === "required" && (
                   <p className="text-red-500">Email is required</p>
                 )}
+              </div>
+
+              <div>
+                <label className="label">
+                  <span className="label-text">Name</span>
+                </label>
+                <input
+                  type="text"
+                  className="input input-bordered w-full"
+                  placeholder="Enter your Name"
+                  {...register("name", { required: true })}
+                />
+              </div>
+
+              <div>
+                <label className="label">
+                  <span className="label-text">Profile Image</span>
+                </label>
+                <input
+                  onChange={handleUploadImage}
+                  type="file"
+                  className="input input-bordered w-full"
+                  placeholder="Upload Image"
+                />
               </div>
 
               <div>
