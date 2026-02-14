@@ -5,6 +5,8 @@ import {
   FaMoneyCheckAlt,
   FaMapMarkedAlt,
   FaUserCircle,
+  FaMotorcycle,
+  FaUserClock,
 } from "react-icons/fa";
 import ProFastLogo from "./shared/logo/ProFastLogo";
 
@@ -79,6 +81,27 @@ const DashboardLayout = () => {
               >
                 <FaMapMarkedAlt className="text-lg" />
                 Track Parcel
+              </NavLink>
+            </li>
+
+            <li>
+              <NavLink
+                to="/dashboard/activeRiders"
+                className="flex items-center gap-3"
+              >
+                <FaMotorcycle className="text-lg" />
+                Active Riders
+              </NavLink>
+            </li>
+
+            {/* Pending Riders */}
+            <li>
+              <NavLink
+                to="/dashboard/pendingRiders"
+                className="flex items-center gap-3"
+              >
+                <FaUserClock className="text-lg" />
+                Pending Riders
               </NavLink>
             </li>
 

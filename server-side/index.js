@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const admin = require("firebase-admin");
 
 const app = express();
 
@@ -10,6 +11,12 @@ const stripe = require("stripe")(process.env.STRIPE_KEY);
 /* Middlewares */
 app.use(cors());
 app.use(express.json());
+
+const serviceAccount = require("./firebase-admin-key.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
 
 /* MongoDB URI */
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.iafk8rj.mongodb.net/?appName=Cluster0`;
@@ -40,6 +47,27 @@ async function startServer() {
     const parcelCollection = parcelDB.collection("parcels");
     const paymentCollection = parcelDB.collection("payments");
     const userCollection = parcelDB.collection("users");
+    const riderCollection = parcelDB.collection("riders");
+
+    const verifyToken = async (req, res, next) => {
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
+        return res.status(401).send({ message: "unauthorized access" });
+      }
+      const token = authHeader.split(" ")[1];
+      if (!token) {
+        return res.status(401).send({ message: "unauthorized access" });
+      }
+
+      // token verify
+      try {
+        const decoded = await admin.auth().verifyIdToken(token);
+        req.decoded = decoded;
+        next();
+      } catch (error) {
+        return res.status(403).send({ message: "Forbidden Access" });
+      }
+    };
 
     app.post("/users", async (req, res) => {
       const email = req.body.email;
@@ -54,12 +82,16 @@ async function startServer() {
       res.send(result);
     });
 
-    app.get("/parcels", async (req, res) => {
+    app.get("/parcels", verifyToken, async (req, res) => {
       try {
         const email = req.query.email;
 
         if (!email) {
           return res.status(400).json({ message: "Email is required" });
+        }
+
+        if (req.decoded.email !== email) {
+          return res.status(403).send({ message: "Forbidden Access" });
         }
 
         const result = await parcelCollection
@@ -119,6 +151,61 @@ async function startServer() {
           message: "Failed to delete parcel",
           error,
         });
+      }
+    });
+
+    app.post("/riders", async (req, res) => {
+      const rider = req.body;
+      const result = await riderCollection.insertOne(rider);
+      res.send(result);
+    });
+
+    app.get("/riders", async (req, res) => {
+      try {
+        const { status } = req.query; // get status from query params, e.g., ?status=approved
+        let query = {};
+
+        if (status) {
+          query.status = status; // filter by status if provided
+        }
+
+        const result = await riderCollection.find(query).toArray();
+
+        res.status(200).send(result);
+      } catch (error) {
+        res.status(500).send({
+          message: "Failed to load riders",
+          error,
+        });
+      }
+    });
+
+    app.patch("/riders/:id", async (req, res) => {
+      const { id } = req.params;
+      const updates = req.body;
+
+      if (!ObjectId.isValid(id)) {
+        return res.status(400).json({ message: "Invalid rider ID" });
+      }
+
+      try {
+        const result = await riderCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: updates },
+        );
+
+        if (result.matchedCount === 0) {
+          return res.status(404).json({ message: "Rider not found" });
+        }
+
+        const updatedRider = await riderCollection.findOne({
+          _id: new ObjectId(id),
+        });
+
+        res.json(updatedRider);
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Failed to update rider" });
       }
     });
 
@@ -207,12 +294,16 @@ async function startServer() {
     });
 
     // get user payment history
-    app.get("/payments", async (req, res) => {
+    app.get("/payments", verifyToken, async (req, res) => {
       try {
         const email = req.query.email;
 
         if (!email) {
           return res.status(400).json({ message: "Email required" });
+        }
+
+        if (req.decoded.email !== email) {
+          return res.status(403).send({ message: "Forbidden Access" });
         }
 
         const payments = await paymentCollection

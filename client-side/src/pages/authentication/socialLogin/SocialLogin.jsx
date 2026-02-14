@@ -1,12 +1,26 @@
 import React from "react";
 import useAuth from "../../../hooks/authHook/useAuth";
+import useAxios from "../../../hooks/axios/useAxios";
 
 const SocialLogin = () => {
   const { signInGoogle } = useAuth();
+  const axiosInstance = useAxios();
 
   const handleGoogleButton = () => {
     signInGoogle()
-      .then((result) => console.log(result.user))
+      .then(async (result) => {
+        const user = result.user;
+
+        //database update
+        const userInfo = {
+          email: user.email,
+          role: "user", //default user
+          created_at: new Date().toISOString(),
+        };
+
+        const res = await axiosInstance.post("/users", userInfo);
+        console.log(res.data);
+      })
       .catch((error) => console.log(error));
   };
 
