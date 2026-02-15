@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosSecure from "../../../hooks/axios/useAxiosSecure";
+import Swal from "sweetalert2";
 
 const ActiveRiders = () => {
   const axiosSecure = useAxiosSecure();
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Fetch approved riders
+  // Fetch approved (active) riders
   const {
     data: riders = [],
     refetch,
@@ -19,10 +20,38 @@ const ActiveRiders = () => {
     },
   });
 
-  // Filter riders by search term
+  // Filter riders by search term safely
   const filteredRiders = riders.filter((rider) =>
     (rider.name || "").toLowerCase().includes(searchTerm.toLowerCase()),
   );
+
+  // Deactivate rider
+  const handleDeactivate = (riderId, riderName) => {
+    Swal.fire({
+      title: `Are you sure?`,
+      text: `Do you want to deactivate ${riderName}?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, deactivate",
+      cancelButtonText: "Cancel",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await axiosSecure.patch(`/riders/${riderId}`, {
+            status: "deactivated",
+          });
+          Swal.fire(
+            "Deactivated!",
+            `${riderName} has been deactivated.`,
+            "success",
+          );
+          refetch();
+        } catch (error) {
+          Swal.fire("Error", `Failed to deactivate rider. ${error.message}`);
+        }
+      }
+    });
+  };
 
   if (isPending) {
     return <p className="text-center mt-6">Loading riders...</p>;
@@ -52,10 +81,8 @@ const ActiveRiders = () => {
               <th>Name</th>
               <th>Email</th>
               <th>Phone</th>
-              <th>Region</th>
-              <th>District</th>
-              <th>Bike Brand</th>
-              <th>Bike Reg. No</th>
+              <th>Status</th>
+              <th>Action</th>
             </tr>
           </thead>
 
@@ -67,15 +94,34 @@ const ActiveRiders = () => {
                   <td>{rider.name}</td>
                   <td>{rider.email}</td>
                   <td>{rider.phone}</td>
-                  <td>{rider.region}</td>
-                  <td>{rider.district}</td>
-                  <td>{rider.bikeBrand}</td>
-                  <td>{rider.bikeRegNumber}</td>
+                  <td>
+                    <span
+                      className={`badge ${
+                        rider.status === "approved"
+                          ? "badge-success"
+                          : rider.status === "deactivated"
+                            ? "badge-gray"
+                            : "badge-warning"
+                      }`}
+                    >
+                      {rider.status}
+                    </span>
+                  </td>
+                  <td>
+                    {rider.status === "approved" && (
+                      <button
+                        onClick={() => handleDeactivate(rider._id, rider.name)}
+                        className="btn btn-xs btn-error"
+                      >
+                        Deactivate
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="8" className="text-center text-gray-400">
+                <td colSpan="6" className="text-center text-gray-400">
                   No active riders found
                 </td>
               </tr>

@@ -7,6 +7,7 @@ import {
   FaUserCircle,
   FaMotorcycle,
   FaUserClock,
+  FaUserShield,
 } from "react-icons/fa";
 import ProFastLogo from "./shared/logo/ProFastLogo";
 
@@ -112,6 +113,15 @@ const DashboardLayout = () => {
               >
                 <FaUserCircle className="text-lg" />
                 Profile
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/dashboard/makeAdmin"
+                className="flex items-center gap-3"
+              >
+                <FaUserShield className="text-lg" />
+                Make Admin
               </NavLink>
             </li>
           </ul>

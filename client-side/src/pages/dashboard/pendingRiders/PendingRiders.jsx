@@ -7,7 +7,11 @@ const PendingRiders = () => {
   const axiosSecure = useAxiosSecure();
   const [modalRider, setModalRider] = useState(null); // simple state for modal
 
-  const { data: riders = [], refetch, isPending } = useQuery({
+  const {
+    data: riders = [],
+    refetch,
+    isPending,
+  } = useQuery({
     queryKey: ["pending-riders"],
     queryFn: async () => {
       const res = await axiosSecure.get("/riders?status=pending");
@@ -17,22 +21,40 @@ const PendingRiders = () => {
 
   const handleApprove = async (rider) => {
     try {
-      await axiosSecure.patch(`/riders/${rider._id}`, { status: "approved" });
-      Swal.fire("Approved!", "Rider has been approved.", "success");
-      setModalRider(null);
-      refetch();
-    } catch {
+      const res = await axiosSecure.patch(`/riders/${rider._id}`, {
+        status: "approved",
+        email: rider.email,
+      });
+
+      if (res.data.modifiedCount > 0) {
+        refetch();
+        Swal.fire("Approved!", "Rider has been approved.", "success");
+        setModalRider(null);
+      } else {
+        Swal.fire("Info", "Rider already approved.", "info");
+      }
+    } catch (error) {
+      console.error(error);
       Swal.fire("Error", "Failed to approve rider", "error");
     }
   };
 
   const handleReject = async (rider) => {
     try {
-      await axiosSecure.patch(`/riders/${rider._id}`, { status: "rejected" });
-      Swal.fire("Rejected", "Rider has been rejected.", "info");
-      setModalRider(null);
-      refetch();
-    } catch {
+      const res = await axiosSecure.patch(`/riders/${rider._id}`, {
+        status: "rejected",
+        email: rider.email,
+      });
+
+      if (res.data.modifiedCount > 0) {
+        refetch();
+        Swal.fire("Rejected", "Rider has been rejected.", "info");
+        setModalRider(null);
+      } else {
+        Swal.fire("Info", "Rider already rejected.", "info");
+      }
+    } catch (error) {
+      console.error(error);
       Swal.fire("Error", "Failed to reject rider", "error");
     }
   };
@@ -93,14 +115,30 @@ const PendingRiders = () => {
             <h3 className="font-bold text-lg mb-4">Rider Application Review</h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mb-4">
-              <p><b>Name:</b> {modalRider.name}</p>
-              <p><b>Email:</b> {modalRider.email}</p>
-              <p><b>Age:</b> {modalRider.age || "-"}</p>
-              <p><b>Phone:</b> {modalRider.phone}</p>
-              <p><b>Region:</b> {modalRider.region}</p>
-              <p><b>District:</b> {modalRider.district}</p>
-              <p><b>NID Number:</b> {modalRider.nid}</p>
-              <p><b>Bike Brand:</b> {modalRider.bikeBrand}</p>
+              <p>
+                <b>Name:</b> {modalRider.name}
+              </p>
+              <p>
+                <b>Email:</b> {modalRider.email}
+              </p>
+              <p>
+                <b>Age:</b> {modalRider.age || "-"}
+              </p>
+              <p>
+                <b>Phone:</b> {modalRider.phone}
+              </p>
+              <p>
+                <b>Region:</b> {modalRider.region}
+              </p>
+              <p>
+                <b>District:</b> {modalRider.district}
+              </p>
+              <p>
+                <b>NID Number:</b> {modalRider.nid}
+              </p>
+              <p>
+                <b>Bike Brand:</b> {modalRider.bikeBrand}
+              </p>
               <p className="sm:col-span-2">
                 <b>Bike Registration Number:</b> {modalRider.bikeRegNumber}
               </p>

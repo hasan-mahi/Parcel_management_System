@@ -82,6 +82,86 @@ async function startServer() {
       res.send(result);
     });
 
+    app.get("/users/search", async (req, res) => {
+      const { email } = req.query;
+
+      if (!email) {
+        return res.status(400).json({ message: "Email query is required" });
+      }
+
+      try {
+        const users = await userCollection
+          .find(
+            {
+              email: { $regex: email, $options: "i" }, // partial + case-insensitive
+            },
+            {
+              projection: {
+                email: 1,
+                role: 1,
+                created_at: 1,
+              },
+            },
+          )
+          .limit(5) // 🔥 limit results
+          .toArray();
+
+        if (users.length === 0) {
+          return res.status(404).json({ message: "No users found" });
+        }
+
+        res.status(200).json(users);
+      } catch (error) {
+        console.error("Search user failed:", error);
+        res.status(500).json({ message: "Failed to search user" });
+      }
+    });
+
+    app.patch("/users/role", async (req, res) => {
+      const { email, role } = req.body;
+
+      // Basic validation
+      if (!email || !role) {
+        return res.status(400).json({
+          message: "Email and role are required",
+        });
+      }
+
+      // Allow only valid roles
+      const allowedRoles = ["admin", "user"];
+      if (!allowedRoles.includes(role)) {
+        return res.status(400).json({
+          message: "Invalid role",
+        });
+      }
+
+      try {
+        const updateResult = await userCollection.updateOne(
+          { email },
+          { $set: { role } },
+        );
+
+        // User not found
+        if (updateResult.matchedCount === 0) {
+          return res.status(404).json({
+            message: "User not found",
+          });
+        }
+
+        // Success response for frontend
+        res.status(200).json({
+          success: true,
+          modifiedCount: updateResult.modifiedCount,
+        });
+      } catch (error) {
+        console.error("Role update failed:", error);
+        res.status(500).json({
+          message: "Failed to update user role",
+          error,
+        });
+      }
+    });
+
     app.get("/parcels", verifyToken, async (req, res) => {
       try {
         const email = req.query.email;
@@ -182,29 +262,40 @@ async function startServer() {
 
     app.patch("/riders/:id", async (req, res) => {
       const { id } = req.params;
-      const updates = req.body;
+      const { status, email } = req.body;
 
+      // Validate MongoDB ID
       if (!ObjectId.isValid(id)) {
         return res.status(400).json({ message: "Invalid rider ID" });
       }
 
+      // Validate status
+      if (!status) {
+        return res.status(400).json({ message: "Status is required" });
+      }
+
       try {
-        const result = await riderCollection.updateOne(
+        const updateResult = await riderCollection.updateOne(
           { _id: new ObjectId(id) },
-          { $set: updates },
+          { $set: { status } },
         );
 
-        if (result.matchedCount === 0) {
+        if (updateResult.matchedCount === 0) {
           return res.status(404).json({ message: "Rider not found" });
         }
 
-        const updatedRider = await riderCollection.findOne({
-          _id: new ObjectId(id),
-        });
+        // If approved → update user role
+        if (status === "approved" && email) {
+          await userCollection.updateOne(
+            { email },
+            { $set: { role: "rider" } },
+          );
+        }
 
-        res.json(updatedRider);
+        // ✅ IMPORTANT: return a proper response
+        res.status(200).send(updateResult);
       } catch (error) {
-        console.error(error);
+        console.error("Rider update failed:", error);
         res.status(500).json({ message: "Failed to update rider" });
       }
     });
