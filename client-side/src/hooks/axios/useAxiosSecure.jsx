@@ -1,6 +1,7 @@
 import axios from "axios";
 import React from "react";
 import useAuth from "../authHook/useAuth";
+import { Navigate } from "react-router";
 
 const axiosSecure = axios.create({
   baseURL: "http://localhost:5000",
@@ -17,6 +18,18 @@ const useAxiosSecure = () => {
       return config;
     },
     (error) => {
+      return Promise.reject(error);
+    },
+  );
+
+  axiosSecure.interceptors.response.use(
+    (response) => {
+      return response;
+    },
+    (error) => {
+      if(error.status ===403){
+        <Navigate to='/forbidden'></Navigate>
+      }
       return Promise.reject(error);
     },
   );

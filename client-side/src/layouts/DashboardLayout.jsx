@@ -8,10 +8,14 @@ import {
   FaMotorcycle,
   FaUserClock,
   FaUserShield,
+  FaUserPlus,
 } from "react-icons/fa";
 import ProFastLogo from "./shared/logo/ProFastLogo";
+import useUserRole from "../hooks/userRole/useUserRole";
 
 const DashboardLayout = () => {
+  const { isAdmin, isLoading } = useUserRole();
+
   return (
     <div>
       <div className="drawer lg:drawer-open">
@@ -85,26 +89,39 @@ const DashboardLayout = () => {
               </NavLink>
             </li>
 
-            <li>
-              <NavLink
-                to="/dashboard/activeRiders"
-                className="flex items-center gap-3"
-              >
-                <FaMotorcycle className="text-lg" />
-                Active Riders
-              </NavLink>
-            </li>
-
-            {/* Pending Riders */}
-            <li>
-              <NavLink
-                to="/dashboard/pendingRiders"
-                className="flex items-center gap-3"
-              >
-                <FaUserClock className="text-lg" />
-                Pending Riders
-              </NavLink>
-            </li>
+            {isAdmin && !isLoading && (
+              <>
+                {" "}
+                <li>
+                  <NavLink
+                    to="/dashboard/activeRiders"
+                    className="flex items-center gap-3"
+                  >
+                    <FaMotorcycle className="text-lg" />
+                    Active Riders
+                  </NavLink>
+                </li>
+                {/* Pending Riders */}
+                <li>
+                  <NavLink
+                    to="/dashboard/pendingRiders"
+                    className="flex items-center gap-3"
+                  >
+                    <FaUserClock className="text-lg" />
+                    Pending Riders
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink
+                    to="/dashboard/makeAdmin"
+                    className="flex items-center gap-3"
+                  >
+                    <FaUserShield className="text-lg" />
+                    Make Admin
+                  </NavLink>
+                </li>
+              </>
+            )}
 
             <li>
               <NavLink
@@ -115,13 +132,14 @@ const DashboardLayout = () => {
                 Profile
               </NavLink>
             </li>
+
             <li>
               <NavLink
-                to="/dashboard/makeAdmin"
+                to="/dashboard/assignRider"
                 className="flex items-center gap-3"
               >
-                <FaUserShield className="text-lg" />
-                Make Admin
+                <FaUserPlus className="text-lg" />
+                Assign Rider
               </NavLink>
             </li>
           </ul>
